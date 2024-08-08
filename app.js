@@ -1,17 +1,18 @@
 const express = require('express');
-const app = express();
 const cors = require('cors');
 const dotenv = require('dotenv');
-dotenv.config();
-const dbService = require('./dbService');
+const DbService = require('./dbService'); // Ensure this matches the filename of your dbService file
 
+dotenv.config();
+
+const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Read All Records
+// Read
 app.get('/getAll', async (request, response) => {
   try {
-    const db = dbService.getDbServiceInstance();
+    const db = DbService.getDbServiceInstance();
     const data = await db.getAllData();
     response.json({ data });
   } catch (err) {
@@ -20,38 +21,25 @@ app.get('/getAll', async (request, response) => {
   }
 });
 
-// Read Record by ID
-app.get('/getById/:id', async (request, response) => {
-  const { id } = request.params;
-  try {
-    const db = dbService.getDbServiceInstance();
-    const data = await db.getDataById(id); // Ensure your dbService has this method
-    response.json(data);
-  } catch (err) {
-    console.error('Error fetching data by ID:', err);
-    response.status(500).json({ error: 'Error fetching data by ID' });
-  }
-});
-
-// Insert New Record
+// Insert
 app.post('/insert', async (request, response) => {
-  const { name, program } = request.body;
+  const { name } = request.body;
   try {
-    const db = dbService.getDbServiceInstance();
-    const id = await db.insertData(name, program);
-    response.json({ success: id > 0 });
+    const db = DbService.getDbServiceInstance();
+    const success = await db.insertName(name);
+    response.json({ success });
   } catch (err) {
     console.error('Error inserting data:', err);
     response.status(500).json({ error: 'Error inserting data' });
   }
 });
 
-// Update Record
+// Update
 app.patch('/update', async (request, response) => {
-  const { id, name, program } = request.body;
+  const { id, name } = request.body;
   try {
-    const db = dbService.getDbServiceInstance();
-    const success = await db.updateNameById(id, name, program);
+    const db = DbService.getDbServiceInstance();
+    const success = await db.updateNameById(id, name);
     response.json({ success });
   } catch (err) {
     console.error('Error updating data:', err);
@@ -59,11 +47,11 @@ app.patch('/update', async (request, response) => {
   }
 });
 
-// Delete Record
+// Delete
 app.delete('/delete/:id', async (request, response) => {
   const { id } = request.params;
   try {
-    const db = dbService.getDbServiceInstance();
+    const db = DbService.getDbServiceInstance();
     const success = await db.deleteRowById(id);
     response.json({ success });
   } catch (err) {
@@ -72,11 +60,11 @@ app.delete('/delete/:id', async (request, response) => {
   }
 });
 
-// Search Records by Name
+// Search
 app.get('/search/:name', async (request, response) => {
   const { name } = request.params;
   try {
-    const db = dbService.getDbServiceInstance();
+    const db = DbService.getDbServiceInstance();
     const data = await db.searchByName(name);
     response.json({ data });
   } catch (err) {

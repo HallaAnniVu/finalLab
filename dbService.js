@@ -1,113 +1,112 @@
-// dbService.js
-
 const mysql = require('mysql');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const connection = mysql.createConnection({
-  host: process.env.HOST,
-  user: process.env.USER,
-  password: process.env.PASSWORD,
-  database: process.env.DATABASE,
-  port: process.env.DB_PORT,
-});
-
-connection.connect((err) => {
-  if (err) {
-    console.error('Error connecting to the database:', err.message);
-    return;
-  }
-  console.log('db ' + connection.state);
-});
-
 class DbService {
   static getDbServiceInstance() {
-    return instance ? instance : new DbService();
+    if (!DbService.instance) {
+      DbService.instance = new DbService();
+    }
+    return DbService.instance;
+  }
+
+  constructor() {
+    this.connection = mysql.createConnection({
+      host: process.env.HOST,
+      user: process.env.USER,
+      password: process.env.PASSWORD,
+      database: process.env.DATABASE,
+      port: process.env.DB_PORT,
+    });
+
+    this.connection.connect((err) => {
+      if (err) {
+        console.error('Error connecting to the database:', err.message);
+        return;
+      }
+      console.log('db ' + this.connection.state);
+    });
   }
 
   async getAllData() {
     try {
-      const query = "SELECT * FROM student;";
-      const response = await new Promise((resolve, reject) => {
-        connection.query(query, (err, results) => {
+      const result = await new Promise((resolve, reject) => {
+        const query = "SELECT * FROM students;";
+        this.connection.query(query, (err, results) => {
           if (err) reject(new Error(err.message));
           resolve(results);
         });
       });
-      return response;
+      return result;
     } catch (error) {
-      console.error('Error fetching data from database:', error);
+      console.error('Error fetching data:', error);
       throw error;
     }
   }
 
-  async updateNameById(id, name, program) {
+  async insertName(name) {
     try {
-      const query = "UPDATE student SET name = ?, program = ? WHERE id = ?";
-      const response = await new Promise((resolve, reject) => {
-        connection.query(query, [name, program, id], (err, results) => {
+      const result = await new Promise((resolve, reject) => {
+        const query = "INSERT INTO students (name) VALUES (?);";
+        this.connection.query(query, [name], (err, results) => {
           if (err) reject(new Error(err.message));
-          resolve(results.affectedRows > 0); // returns true if a row was updated
+          resolve(results.affectedRows > 0);
         });
       });
-      return response;
+      return result;
     } catch (error) {
-      console.error('Error updating data in database:', error);
+      console.error('Error inserting data:', error);
       throw error;
     }
   }
 
-  async insertData(name, program) {
+  async updateNameById(id, name) {
     try {
-      const query = "INSERT INTO student (name, program, date_added) VALUES (?, ?, NOW())";
-      const response = await new Promise((resolve, reject) => {
-        connection.query(query, [name, program], (err, results) => {
-          if (err) {
-            console.error('Error inserting data:', err.message);
-            reject(new Error(err.message));
-          }
-          resolve(results.insertId); // returns the ID of the newly inserted row
+      const result = await new Promise((resolve, reject) => {
+        const query = "UPDATE students SET name = ? WHERE id = ?;";
+        this.connection.query(query, [name, id], (err, results) => {
+          if (err) reject(new Error(err.message));
+          resolve(results.affectedRows > 0);
         });
       });
-      return response;
+      return result;
     } catch (error) {
-      console.error('Error inserting data into database:', error);
+      console.error('Error updating data:', error);
       throw error;
     }
   }
 
   async deleteRowById(id) {
     try {
-      const query = "DELETE FROM student WHERE id = ?";
-      const response = await new Promise((resolve, reject) => {
-        connection.query(query, [id], (err, results) => {
+      const result = await new Promise((resolve, reject) => {
+        const query = "DELETE FROM students WHERE id = ?;";
+        this.connection.query(query, [id], (err, results) => {
           if (err) reject(new Error(err.message));
-          resolve(results.affectedRows > 0); // returns true if a row was deleted
+          resolve(results.affectedRows > 0);
         });
       });
-      return response;
+      return result;
     } catch (error) {
-      console.error('Error deleting data from database:', error);
+      console.error('Error deleting data:', error);
       throw error;
     }
   }
 
   async searchByName(name) {
     try {
-      const query = "SELECT * FROM student WHERE name LIKE ?";
-      const response = await new Promise((resolve, reject) => {
-        connection.query(query, [`%${name}%`], (err, results) => {
+      const result = await new Promise((resolve, reject) => {
+        const query = "SELECT * FROM students WHERE name LIKE ?;";
+        this.connection.query(query, [`%${name}%`], (err, results) => {
           if (err) reject(new Error(err.message));
           resolve(results);
         });
       });
-      return response;
+      return result;
     } catch (error) {
-      console.error('Error searching data in database:', error);
+      console.error('Error searching data:', error);
       throw error;
     }
   }
 }
 
-let instance = null;
 module.exports = DbService;
